@@ -1,4 +1,3 @@
-// app/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -15,20 +14,64 @@ export default function HomePage() {
   const [data, setData] = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const [coach, setCoach] = useState<string | null>(null);
+  const [coachLoading, setCoachLoading] = useState(false);
+  const [coachError, setCoachError] = useState<string | null>(null);
+
   async function handleFetch() {
     if (!playerId) return;
     setLoading(true);
     setData(null);
+    setCoach(null);
+    setCoachError(null);
 
     try {
       const res = await fetch(`/api/player/${playerId}`);
       const json = (await res.json()) as ApiResponse;
       setData(json);
+      if (json.error) {
+        setCoach(null);
+      }
     } catch (e) {
       console.error(e);
       setData({ error: "Failed to fetch" });
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleCoach() {
+    if (!data?.analysis) return;
+
+    setCoachLoading(true);
+    setCoachError(null);
+    setCoach(null);
+
+    try {
+      const res = await fetch("/api/coach", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          profile: data.profile,
+          analysis: data.analysis,
+        }),
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setCoachError(json.error || "Failed to generate coaching advice");
+        return;
+      }
+
+      setCoach(json.coach);
+    } catch (e) {
+      console.error(e);
+      setCoachError("Failed to generate coaching advice");
+    } finally {
+      setCoachLoading(false);
     }
   }
 
@@ -57,12 +100,26 @@ export default function HomePage() {
 
       {data?.error && <div className="text-red-600 mb-4">{data.error}</div>}
 
-      {analysis && (
+      {/* Performance summary */}
+      {analysis && analysis.sampleSize > 0 && (
         <section className="mb-8 border rounded-lg p-4 bg-gray-50">
-          <h2 className="text-xl font-semibold mb-2">
-            Performance Summary (last {analysis.sampleSize} matches)
-          </h2>
-          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-3 gap-3">
+            <h2 className="text-xl font-semibold">
+              Performance Summary (last {analysis.sampleSize} matches)
+            </h2>
+
+            <button
+              onClick={handleCoach}
+              disabled={coachLoading}
+              className="border rounded px-4 py-2 text-sm bg-black text-white disabled:opacity-60"
+            >
+              {coachLoading
+                ? "Generating AI Coaching..."
+                : "Generate AI Coaching"}
+            </button>
+          </div>
+
+          <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3 mb-4">
             <div>
               <span className="font-medium">Winrate:</span>{" "}
               {Math.round(analysis.winrate * 100)}%
@@ -84,7 +141,7 @@ export default function HomePage() {
             </div>
             <div>
               <span className="font-medium">Avg Hero Damage:</span>{" "}
-              {analysis.avgHeroDamage.toFixed(0)}
+              {Math.round(analysis.avgHeroDamage).toLocaleString()}
             </div>
             <div>
               <span className="font-medium">Avg Last Hits:</span>{" "}
@@ -102,7 +159,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-2">
             <h3 className="font-semibold mb-1 text-sm">Suggestions</h3>
             <ul className="list-disc pl-5 text-sm space-y-1">
               {analysis.suggestions?.map((s: string, i: number) => (
@@ -110,6 +167,22 @@ export default function HomePage() {
               ))}
             </ul>
           </div>
+        </section>
+      )}
+
+      {/* AI Coach panel */}
+      {coachError && (
+        <div className="text-red-600 mb-4 text-sm">{coachError}</div>
+      )}
+
+      {coach && (
+        <section className="mb-8 border rounded-lg p-4 bg-gray-50">
+          <h2 className="text-xl font-semibold mb-2">AI Coach</h2>
+          {/* very simple markdown-ish rendering; you can swap to react-markdown later */}
+          <div
+            className="prose prose-sm max-w-none"
+            dangerouslySetInnerHTML={{ __html: coach.replace(/\n/g, "<br/>") }}
+          />
         </section>
       )}
 
