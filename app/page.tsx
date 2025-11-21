@@ -6,8 +6,32 @@ import { PlayerSummaryCard } from "@/components/dashboard/player-summary-card";
 import { PerformanceOverviewCard } from "@/components/dashboard/performance-overview-card";
 import { AICoachCard } from "@/components/dashboard/ai-coach-card";
 import { RecentMatchesCard } from "@/components/dashboard/recent-matches-card";
-import { Analysis, ApiResponse } from "@/lib/types";
+import { Analysis, ApiResponse, PlayerProfile } from "@/lib/types";
 import { useHeroes } from "@/lib/hooks/useHeroes";
+type RawProfile =
+  | PlayerProfile
+  | { profile?: PlayerProfile | null }
+  | null
+  | undefined;
+
+function normalizeProfile(raw: RawProfile): PlayerProfile | null {
+  if (!raw) return null;
+
+  // handle shape: { profile: { ...actualProfile } }
+  if (typeof raw === "object" && "profile" in raw && raw.profile) {
+    return raw.profile as PlayerProfile;
+  }
+
+  // already flat
+  return raw as PlayerProfile;
+}
+
+type RawApiResponse = {
+  profile?: RawProfile;
+  recentMatches?: ApiResponse["recentMatches"];
+  analysis?: Analysis | null;
+  error?: string;
+};
 
 export default function HomePage() {
   const [playerId, setPlayerId] = useState("");
@@ -19,8 +43,6 @@ export default function HomePage() {
   const [coachError, setCoachError] = useState<string | null>(null);
 
   async function handleFetch() {
-    
-
     if (!playerId) return;
     setLoading(true);
     setData(null);
@@ -29,9 +51,18 @@ export default function HomePage() {
 
     try {
       const res = await fetch(`/api/player/${playerId}`);
-      const json = (await res.json()) as ApiResponse;
-      setData(json);
-      if (json.error) {
+      const raw = (await res.json()) as RawApiResponse;
+
+      const normalized: ApiResponse = {
+        profile: normalizeProfile(raw.profile ?? null),
+        recentMatches: raw.recentMatches ?? null,
+        analysis: raw.analysis ?? null,
+        error: raw.error,
+      };
+
+      setData(normalized);
+
+      if (normalized.error) {
         setCoach(null);
       }
     } catch (e) {
@@ -41,6 +72,7 @@ export default function HomePage() {
       setLoading(false);
     }
   }
+
 
   async function handleCoach() {
     if (!data?.analysis) return;
