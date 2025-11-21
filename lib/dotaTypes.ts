@@ -40,7 +40,7 @@ export interface RecentMatch {
   is_roaming?: boolean | null;
   party_size?: number | null;
   // allow unknown extras
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Aggregated per-hero performance

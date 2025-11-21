@@ -124,7 +124,6 @@ function buildSuggestions(
   const winratePct = Math.round(analysis.winrate * 100);
   const kda = analysis.avgKDA.kda;
   const gpm = analysis.avgGPM;
-  const xpm = analysis.avgXPM;
 
   // Winrate based suggestions
   if (games >= 10 && analysis.winrate < 0.45) {

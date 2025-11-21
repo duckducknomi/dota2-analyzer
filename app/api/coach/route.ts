@@ -1,10 +1,35 @@
 // app/api/coach/route.ts
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
+import { Analysis, PlayerProfile } from "@/lib/types";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+type NestedPlayerProfile = {
+  profile?: PlayerProfile | null;
+};
+
+type CoachRequestBody = {
+  profile?: PlayerProfile | NestedPlayerProfile | null;
+  analysis?: Analysis | null;
+};
+
+function extractPlayerProfile(
+  profile: CoachRequestBody["profile"]
+): PlayerProfile | null {
+  if (
+    profile &&
+    typeof profile === "object" &&
+    "profile" in profile &&
+    profile.profile
+  ) {
+    return profile.profile;
+  }
+
+  return profile ?? null;
+}
 
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
@@ -15,7 +40,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json();
+    const body = (await req.json()) as CoachRequestBody | null;
     const { profile, analysis } = body ?? {};
 
     if (!analysis) {
@@ -25,8 +50,9 @@ export async function POST(req: Request) {
       );
     }
 
+    const playerProfile = extractPlayerProfile(profile);
     const playerName =
-      profile?.profile?.personaname || profile?.profile?.name || "the player";
+      playerProfile?.personaname || playerProfile?.name || "the player";
 
     // We’ll just give the model one well-structured prompt.
     const prompt = `
@@ -74,7 +100,7 @@ Numbered list of specific things to focus on in the next 10 games (item builds, 
     // The JS client exposes a convenience field for text:
     // https://platform.openai.com/docs/api-reference/responses
     const coachText =
-      (response as any).output_text || "No coaching advice generated.";
+      response.output_text || "No coaching advice generated.";
 
     return NextResponse.json({ coach: coachText });
   } catch (err) {
