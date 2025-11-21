@@ -1,4 +1,6 @@
 import { Card } from "@/components/ui/card";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type AICoachCardProps = {
   coach: string | null;
@@ -23,12 +25,9 @@ export function AICoachCard({ coach }: AICoachCardProps) {
         <div className="rounded-lg bg-[color:var(--analyzer-nav)] px-5 py-4 text-sm text-slate-100">
           {/* Temporary rendering: just replace newlines with <br>. 
              We’ll swap this to a proper markdown renderer later. */}
-          <div
-            className="prose prose-invert prose-sm max-w-none"
-            dangerouslySetInnerHTML={{
-              __html: coach.replace(/\n/g, "<br/>"),
-            }}
-          />
+          <div className="prose prose-invert prose-sm max-w-none">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{coach}</ReactMarkdown>
+          </div>
         </div>
       )}
     </Card>

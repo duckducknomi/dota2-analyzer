@@ -7,6 +7,7 @@ import { PerformanceOverviewCard } from "@/components/dashboard/performance-over
 import { AICoachCard } from "@/components/dashboard/ai-coach-card";
 import { RecentMatchesCard } from "@/components/dashboard/recent-matches-card";
 import { Analysis, ApiResponse } from "@/lib/types";
+import { useHeroes } from "@/lib/hooks/useHeroes";
 
 export default function HomePage() {
   const [playerId, setPlayerId] = useState("");
@@ -18,6 +19,8 @@ export default function HomePage() {
   const [coachError, setCoachError] = useState<string | null>(null);
 
   async function handleFetch() {
+    
+
     if (!playerId) return;
     setLoading(true);
     setData(null);
@@ -74,7 +77,7 @@ export default function HomePage() {
       setCoachLoading(false);
     }
   }
-
+  const { heroesById } = useHeroes();
   const analysis = data?.analysis as Analysis | undefined;
 
   return (
@@ -120,7 +123,10 @@ export default function HomePage() {
         </div>
 
         {/* Bottom row: recent matches */}
-        <RecentMatchesCard recentMatches={data?.recentMatches ?? null} />
+        <RecentMatchesCard
+          recentMatches={data?.recentMatches}
+          heroesById={heroesById}
+        />
 
         {/* Debug JSON (keep for now, can delete later) */}
         {data?.profile && (

@@ -35,6 +35,12 @@ export type Analysis = {
 
 /* ========== MATCHES ========== */
 
+export type HeroMeta = {
+  id: number;
+  localizedName: string;
+  iconUrl?: string;
+};
+
 export type RecentMatch = {
   match_id?: number;
   hero_id?: number;
@@ -47,7 +53,7 @@ export type RecentMatch = {
   xp_per_min?: number;
   duration?: number;
   lane_role?: number;
-  // expand with more fields when you use them (items, lobby type, etc.)
+  start_time?: number; // optional, if you ever use it
 };
 
 /* ========== API RESPONSES ========== */
