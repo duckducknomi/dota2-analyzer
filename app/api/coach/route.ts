@@ -7,9 +7,11 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-type NestedPlayerProfile = {
-  profile?: PlayerProfile | null;
-};
+type NestedPlayerProfile = { profile: PlayerProfile | null };
+
+function isNestedPlayerProfile(value: unknown): value is NestedPlayerProfile {
+  return !!value && typeof value === "object" && "profile" in value;
+}
 
 type CoachRequestBody = {
   profile?: PlayerProfile | NestedPlayerProfile | null;
@@ -19,13 +21,8 @@ type CoachRequestBody = {
 function extractPlayerProfile(
   profile: CoachRequestBody["profile"]
 ): PlayerProfile | null {
-  if (
-    profile &&
-    typeof profile === "object" &&
-    "profile" in profile &&
-    profile.profile
-  ) {
-    return profile.profile;
+  if (isNestedPlayerProfile(profile)) {
+    return profile.profile ?? null;
   }
 
   return profile ?? null;
