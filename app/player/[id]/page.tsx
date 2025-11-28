@@ -134,7 +134,7 @@ export default function PlayerPage() {
   }, [routeId]);
 
   return (
-    <main className="min-h-screen bg-[color:var(--analyzer-bg)] text-slate-100">
+    <main className="min-h-screen bg-(--analyzer-bg) text-slate-100">
       {/* Top nav */}
       <TopBar
         playerId={playerId}

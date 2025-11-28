@@ -21,7 +21,7 @@ export function RecentMatchesCard({ recentMatches, heroesById }: Props) {
   const matches = recentMatches ?? [];
 
   return (
-    <Card className="rounded-xl border-0 bg-[color:var(--analyzer-card)] px-6 py-5">
+    <Card className="rounded-xl border-0 bg-(--analyzer-card) px-6 py-5">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-sm font-semibold text-slate-100">Recent Matches</h2>
         {/* subtle hint text */}

@@ -14,9 +14,9 @@ export function PlayerSummaryCard({
   const avatar = profile?.avatarfull ?? null;
 
   return (
-    <Card className="flex items-center gap-4 rounded-xl border-0 bg-[color:var(--analyzer-card)] px-5 py-4">
+    <Card className="flex items-center gap-4 rounded-xl border-0 bg-(--analyzer-card) px-5 py-4">
       {/* Avatar */}
-      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-[color:var(--analyzer-accent)]/80 overflow-hidden">
+      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-(--analyzer-accent)/80 overflow-hidden">
         {avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
