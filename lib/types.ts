@@ -37,9 +37,19 @@ export type Analysis = {
 
 export type HeroMeta = {
   id: number;
-  localizedName: string;
-  iconUrl?: string;
+  name: string; // "npc_dota_hero_nyx_assassin"
+  localized_name: string; // OpenDota snake_case
+  localizedName: string; // camelCase alias for convenience
+
+  // Relative paths from OpenDota heroStats
+  icon: string; // "/apps/dota2/images/dota_react/heroes/nyx_assassin_icon.png?"
+  img: string; // "/apps/dota2/images/dota_react/heroes/nyx_assassin.png?"
+
+  // Fully qualified URL (what your old route already intended)
+  iconUrl: string; // "https://cdn.cloudflare.steamstatic.com/apps/dota2/..."
 };
+
+
 
 export type RecentMatch = {
   match_id?: number;

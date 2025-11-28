@@ -1,189 +1,175 @@
 "use client";
 
-import { useState } from "react";
-import { TopBar } from "@/components/layout/TopBar";
-import { PlayerSummaryCard } from "@/components/dashboard/player-summary-card";
-import { PerformanceOverviewCard } from "@/components/dashboard/performance-overview-card";
-import { AICoachCard } from "@/components/dashboard/ai-coach-card";
-import { RecentMatchesCard } from "@/components/dashboard/recent-matches-card";
-import { Analysis, ApiResponse, PlayerProfile } from "@/lib/types";
-import { useHeroes } from "@/lib/hooks/useHeroes";
-type RawProfile =
-  | PlayerProfile
-  | { profile?: PlayerProfile | null }
-  | null
-  | undefined;
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { ApiResponse } from "@/lib/types";
 
-function normalizeProfile(raw: RawProfile): PlayerProfile | null {
-  if (!raw) return null;
-
-  // handle shape: { profile: { ...actualProfile } }
-  if (typeof raw === "object" && "profile" in raw && raw.profile) {
-    return raw.profile as PlayerProfile;
-  }
-
-  // already flat
-  return raw as PlayerProfile;
-}
-
-type RawApiResponse = {
-  profile?: RawProfile;
-  recentMatches?: ApiResponse["recentMatches"];
-  analysis?: Analysis | null;
-  error?: string;
-};
-
-export default function HomePage() {
+export default function LandingPage() {
+  const router = useRouter();
   const [playerId, setPlayerId] = useState("");
-  const [data, setData] = useState<ApiResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [coach, setCoach] = useState<string | null>(null);
-  const [coachLoading, setCoachLoading] = useState(false);
-  const [coachError, setCoachError] = useState<string | null>(null);
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmed = playerId.trim();
 
-  async function handleFetch() {
-    if (!playerId) return;
-    setLoading(true);
-    setData(null);
-    setCoach(null);
-    setCoachError(null);
-
-    try {
-      const res = await fetch(`/api/player/${playerId}`);
-      const raw = (await res.json()) as RawApiResponse;
-
-      const normalized: ApiResponse = {
-        profile: normalizeProfile(raw.profile ?? null),
-        recentMatches: raw.recentMatches ?? null,
-        analysis: raw.analysis ?? null,
-        error: raw.error,
-      };
-
-      setData(normalized);
-
-      if (normalized.error) {
-        setCoach(null);
-      }
-    } catch (e) {
-      console.error(e);
-      setData({ error: "Failed to fetch" });
-    } finally {
-      setLoading(false);
+    if (!trimmed) {
+      setError("Please enter your Steam32 ID or Dota account ID.");
+      return;
     }
-  }
 
-
-  async function handleCoach() {
-    if (!data?.analysis) return;
-
-    setCoachLoading(true);
-    setCoachError(null);
-    setCoach(null);
+    setError(null);
+    setSubmitting(true);
 
     try {
-      const res = await fetch("/api/coach", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          profile: data.profile,
-          analysis: data.analysis,
-        }),
-      });
+      // Validate / pre-fetch player so we can show a friendly error here
+      const res = await fetch(`/api/player/${trimmed}`);
+      const json = (await res.json()) as ApiResponse;
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        setCoachError(json.error || "Failed to generate coaching advice");
+      if (!res.ok || json.error) {
+        setError(
+          json.error || "Could not load player. Check the ID and try again."
+        );
+        setSubmitting(false);
         return;
       }
 
-      // json.coach is the markdown/markdown-ish string
-      setCoach(json.coach);
-    } catch (e) {
-      console.error(e);
-      setCoachError("Failed to generate coaching advice");
-    } finally {
-      setCoachLoading(false);
+      // All good → go to dashboard for this player
+      router.push(`/player/${trimmed}`);
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong. Please try again.");
+      setSubmitting(false);
     }
   }
-  const { heroesById } = useHeroes();
-  const analysis = data?.analysis as Analysis | undefined;
 
   return (
-    <main className="min-h-screen bg-(--analyzer-bg) text-slate-100">
+    <main className="min-h-screen bg-[color:var(--analyzer-bg)] text-slate-100 flex flex-col">
       {/* Top nav */}
-      <TopBar
-        playerId={playerId}
-        onPlayerIdChange={setPlayerId}
-        onFetch={handleFetch}
-        loading={loading}
-      />
-
-      {/* Page content */}
-      <section className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
-        {/* Errors */}
-        {data?.error && (
-          <div className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">
-            {data.error}
+      <header className="border-b border-white/5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          <div className="flex items-center gap-2">
+            <div className="h-3 w-3 rounded-sm bg-blue-400" />
+            <span className="text-sm font-semibold text-slate-100">
+              Dota 2 Analyzer
+            </span>
           </div>
-        )}
-        {coachError && (
-          <div className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">
-            {coachError}
-          </div>
-        )}
-
-        {/* Top row: left column (player + performance), right column (AI coach) */}
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
-          <div className="flex flex-col gap-6">
-            <PlayerSummaryCard
-              profile={data?.profile ?? null}
-              analysis={analysis ?? null}
-            />
-            <PerformanceOverviewCard
-              analysis={analysis ?? null}
-              onGenerateCoach={handleCoach}
-              coachLoading={coachLoading}
-              hasCoach={!!coach}
-            />
-          </div>
-
-          <AICoachCard coach={coach} />
         </div>
+      </header>
 
-        {/* Bottom row: recent matches */}
-        <RecentMatchesCard
-          recentMatches={data?.recentMatches}
-          heroesById={heroesById}
-        />
+      {/* Content */}
+      <section className="flex-1">
+        <div className="mx-auto flex max-w-6xl flex-col gap-16 px-6 py-12 lg:py-16">
+          {/* Hero */}
+          <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.1fr)]">
+            {/* Left: text + form */}
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-slate-50 sm:text-4xl">
+                AI Coaching for Your
+                <br />
+                Last 20 Dota 2 Games
+              </h1>
 
-        {/* Debug JSON (keep for now, can delete later) */}
-        {data?.profile && (
-          <section className="mt-8">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Debug · Profile
-            </h2>
-            <pre className="max-h-64 overflow-auto rounded bg-black/40 p-3 text-[10px] text-slate-200">
-              {JSON.stringify(data.profile, null, 2)}
-            </pre>
-          </section>
-        )}
+              <p className="mt-4 max-w-xl text-sm text-slate-400">
+                Paste your Steam32 / Dota account ID and we&apos;ll analyze your
+                recent public matches to give you a focused plan for what to fix
+                in your next games.
+              </p>
 
-        {data?.recentMatches && (
-          <section className="mt-4">
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              Debug · Recent Matches
-            </h2>
-            <pre className="max-h-64 overflow-auto rounded bg-black/40 p-3 text-[10px] text-slate-200">
-              {JSON.stringify(data.recentMatches, null, 2)}
-            </pre>
-          </section>
-        )}
+              <form
+                onSubmit={handleSubmit}
+                className="mt-6 flex max-w-xl flex-col gap-3"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    value={playerId}
+                    onChange={(e) => setPlayerId(e.target.value)}
+                    placeholder="Enter Steam32 ID / Dota account ID"
+                    className="flex-1 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/70 focus:border-transparent"
+                  />
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="inline-flex items-center justify-center rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-400 disabled:opacity-60"
+                  >
+                    {submitting ? "Checking..." : "Start Coaching"}
+                  </button>
+                </div>
+
+                {error && <p className="text-xs text-red-400">{error}</p>}
+
+                <p className="text-[11px] text-slate-500">
+                  We only read public match history. Nothing is stored.
+                </p>
+              </form>
+            </div>
+
+            {/* Right: example analysis preview */}
+            <div className="flex justify-center lg:justify-end">
+              <div className="w-full max-w-md rounded-2xl bg-[color:var(--analyzer-card)] p-3 shadow-sm">
+                <div className="overflow-hidden rounded-xl bg-black/40">
+                  {/* Replace src with your actual dashboard preview screenshot in /public */}
+                  <Image
+                    src="/landing-dashboard-preview.png"
+                    alt="Example analysis dashboard"
+                    width={640}
+                    height={360}
+                    className="h-auto w-full object-cover"
+                  />
+                </div>
+                <p className="mt-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Example Analysis
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* How it works */}
+          <div className="space-y-4">
+            <p className="text-center text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+              How it works
+            </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl bg-[color:var(--analyzer-card)] px-4 py-4 text-sm">
+                <p className="font-semibold text-slate-100">Paste your ID</p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Enter your Steam32 or Dota account ID to get started. We use
+                  your public match history only.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[color:var(--analyzer-card)] px-4 py-4 text-sm">
+                <p className="font-semibold text-slate-100">
+                  We analyze your games
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  We look at your last 20 matches to find patterns in your
+                  performance, roles, and hero choices.
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[color:var(--analyzer-card)] px-4 py-4 text-sm">
+                <p className="font-semibold text-slate-100">
+                  AI coach gives you a plan
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Get focused, actionable advice on what to change in your next
+                  games to actually improve.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
+
+      {/* Footer */}
+      <footer className="border-t border-white/5">
+        <div className="mx-auto max-w-6xl px-6 py-4">
+          <p className="text-center text-[11px] text-slate-500">
+            Uses OpenDota public data. Not affiliated with Valve or Dota 2.
+          </p>
+        </div>
+      </footer>
     </main>
   );
 }
-

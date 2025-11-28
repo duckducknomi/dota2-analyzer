@@ -1,17 +1,19 @@
+// app/api/heroes/route.ts
 import { NextResponse } from "next/server";
 import type { HeroMeta } from "@/lib/types";
 
 type OpenDotaHero = {
   id: number;
+  name: string;
   localized_name: string;
   icon: string; // relative icon path
+  img: string; // relative hero image path
 };
 
 export async function GET() {
   try {
     const res = await fetch("https://api.opendota.com/api/heroStats", {
-      // cache 1 hour on the server
-      next: { revalidate: 60 * 60 },
+      next: { revalidate: 60 * 60 }, // cache 1 hour
     });
 
     if (!res.ok) {
@@ -26,8 +28,12 @@ export async function GET() {
 
     const heroes: HeroMeta[] = raw.map((h) => ({
       id: h.id,
+      name: h.name,
+      localized_name: h.localized_name,
       localizedName: h.localized_name,
-      // OpenDota gives a relative icon path like `/apps/dota2/...`
+      icon: h.icon,
+      img: h.img,
+      // steamstatic CDN version (useful elsewhere, optional for RecentMatchesCard)
       iconUrl: `https://cdn.cloudflare.steamstatic.com${h.icon}`,
     }));
 
