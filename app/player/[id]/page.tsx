@@ -20,12 +20,10 @@ type RawProfile =
 function normalizeProfile(raw: RawProfile): PlayerProfile | null {
   if (!raw) return null;
 
-  // handle shape: { profile: { ...actualProfile } }
   if (typeof raw === "object" && "profile" in raw && raw.profile) {
     return raw.profile as PlayerProfile;
   }
 
-  // already flat
   return raw as PlayerProfile;
 }
 
@@ -113,7 +111,6 @@ export default function PlayerPage() {
         return;
       }
 
-      // json.coach is the markdown/markdown-ish string
       setCoach(json.coach);
     } catch (e) {
       console.error(e);
@@ -123,8 +120,6 @@ export default function PlayerPage() {
     }
   }
 
-  // Auto-fetch when the route id is present (first load or when navigating
-  // from the landing page)
   useEffect(() => {
     if (routeId) {
       setPlayerId(routeId);
@@ -135,7 +130,6 @@ export default function PlayerPage() {
 
   return (
     <main className="min-h-screen bg-(--analyzer-bg) text-slate-100">
-      {/* Top nav */}
       <TopBar
         playerId={playerId}
         onPlayerIdChange={setPlayerId}
@@ -143,9 +137,7 @@ export default function PlayerPage() {
         loading={loading}
       />
 
-      {/* Page content */}
       <section className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-8">
-        {/* Errors */}
         {data?.error && (
           <div className="rounded-md border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm text-red-200">
             {data.error}
@@ -157,25 +149,25 @@ export default function PlayerPage() {
           </div>
         )}
 
-        {/* Top row: left column (player + performance), right column (AI coach) */}
+        {/* Top row: left (player + performance), right (AI coach) */}
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,2fr)]">
           <div className="flex flex-col gap-6">
             <PlayerSummaryCard
               profile={data?.profile ?? null}
               analysis={analysis ?? null}
             />
-            <PerformanceOverviewCard
-              analysis={analysis ?? null}
-              onGenerateCoach={handleCoach}
-              coachLoading={coachLoading}
-              hasCoach={!!coach}
-            />
+            <PerformanceOverviewCard analysis={analysis ?? null} />
           </div>
 
-          <AICoachCard coach={coach} />
+          <AICoachCard
+            coach={coach}
+            onGenerateCoach={handleCoach}
+            coachLoading={coachLoading}
+            hasAnalysis={!!analysis}
+          />
         </div>
 
-        {/* Bottom row: recent matches */}
+        {/* Bottom: recent matches */}
         <RecentMatchesCard
           recentMatches={data?.recentMatches}
           heroesById={heroesById}
