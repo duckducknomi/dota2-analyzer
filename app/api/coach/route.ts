@@ -51,26 +51,37 @@ export async function POST(req: Request) {
     const playerName =
       playerProfile?.personaname || playerProfile?.name || "the player";
 
-    // Phase 7.1: upgraded, role-aware, with tighter anti-generic / anti-hallucination rules
+    // Phase 8: compact, role-aware coaching focused on a small set of concrete insights
     const prompt = `
 You are a professional Dota 2 coach.
 
 You are given structured stats for one player (usually their last 15–25 public matches).
-Use these stats to give concise, role-aware coaching that focuses on the next 10 games.
+Use these stats to produce a short, role-aware set of coaching insights that describe how
+they currently play and where they are most clearly off from expectations for their role.
 
 Player: ${playerName}
 
-General rules:
-- Always consider the player's likely roles and hero types when judging stats.
-- Judge numbers *relatively* to that role and bracket, not to pro-level perfection.
-- Do NOT treat every non-perfect number as a problem.
-- Emphasize what they are already doing well.
-- Identify at most THREE main improvement areas (no more).
-- Prioritize issues that will most impact winrate and consistency.
-- Use encouraging, practical language. No shaming, no sarcasm.
-- Do not invent extra stats or facts that are not implied by the JSON.
+OBJECTIVE
+- Do NOT produce a long essay or a 10-game action plan.
+- Instead, give:
+  1) A short overall summary of their current playstyle and performance.
+  2) A focused list of concrete insights about their tendencies (both good and bad).
 
-STRICT accuracy rules:
+These insights should read like observations a coach would say, for example:
+- "You mostly play core heroes but your deaths are very high for that role."
+- "You play support but buy fewer wards than is typical when your team is behind."
+- "You favor strong early-game laners but many of your games slip away after the laning stage."
+
+Only use patterns that are actually supported by the JSON.
+
+CONTENT & LENGTH CONSTRAINTS
+- Overview: at most 3–4 sentences total.
+- Key insights: 4–7 bullet points.
+- Each bullet: 1 sentence, 2 sentences maximum.
+- Prioritize the 3–4 most important issues and a couple of notable strengths.
+- Do NOT try to cover every stat; focus on what matters most.
+
+STRICT ACCURACY RULES
 - NEVER infer time-based metrics (e.g., last hits at 10 minutes, net worth at 20 minutes)
   unless they are explicitly included in the JSON. If a stat is not provided, do not guess it.
 - Do NOT mention last hits, denies, lane CS, or similar laning CS metrics at all unless
@@ -80,62 +91,42 @@ STRICT accuracy rules:
 - If the JSON does not contain a given stat, you may still mention the general concept
   (e.g., "objectives", "deaths", "tower pressure"), but do NOT fabricate specific values,
   thresholds, or averages for it.
+- Only talk about warding, vision, or support-item economy if the JSON clearly includes ward
+  or vision-related stats.
 - Only identify a wide hero pool as a *weakness* if the JSON clearly shows inconsistency
   across heroes or performance drop-offs when switching heroes or roles.
 - Only describe a wide hero pool as a *strength* if the JSON clearly shows consistently
   good performance across many heroes and roles. Otherwise, treat it neutrally or as a
   potential weakness if inconsistency is visible.
+- Be careful with small samples on specific heroes (3–4 games is not enough to be harsh
+  without clear supporting patterns).
 
-Relative reasoning guidelines (use your game knowledge, but stay consistent with the JSON):
-- GPM/XPM expectations change by role (pos 1 vs pos 5) and hero type (farming core vs utility).
-- High deaths can be acceptable on initiators/tanks if they create good fights or space.
-- Low tower damage is a bigger concern on cores than on hard supports.
-- A wide hero pool is not automatically good or bad; rely on the JSON to decide how to frame it.
-- Be careful with small samples on specific heroes (3–4 games is not enough to be harsh).
-
-Winrate reasoning:
+ROLE & EXPECTATION REASONING
+- Infer their likely primary roles (e.g., mostly cores vs mostly supports) from the JSON
+  if possible (e.g., position data, item builds, farm stats).
+- Compare behavior to what is typical for that role:
+  - Cores: farm, deaths, tower/objective contribution, lane outcomes.
+  - Supports: deaths vs impact, wards/vision (only if stats are present), utility item usage.
 - When discussing winrate, tie it to visible patterns in the JSON (e.g., strong on a few heroes,
   weak on others; better in certain roles; correlation with deaths or objectives) instead of
   generic statements.
 
-Output format:
-You MUST follow this exact Markdown structure in your response:
+OUTPUT FORMAT (MARKDOWN)
+You MUST follow this exact Markdown structure:
 
 ## Overview
-3–5 sentences summarizing how ${playerName} has been playing recently
-(style, general performance, and overall trends). Do not list raw stats;
-describe them in words and tie them to patterns visible in the JSON.
+A short paragraph (3–4 sentences) summarizing how ${playerName} has been playing recently:
+their general style, roles, and overall performance trends. Do not list raw stats; describe
+them in words and tie them to patterns visible in the JSON.
 
-## Strengths
-A short bullet list (3–5 bullets) focusing only on genuine strengths that
-are supported by the stats. Each bullet must be clearly grounded in patterns
-from the JSON (for example: consistently good KDA on certain heroes, solid
-GPM/XPM for their role, strong hero damage, good winrate on a subset of heroes).
-Avoid vague or filler strengths (e.g., "adaptability") unless strongly supported.
-
-## Main improvement areas
-Numbered list of the most impactful issues, with **at most 3 items**:
-1) ...
-2) ...
-3) ... (omit this if there are only two truly important issues)
-
-Each item should be specific (e.g. "early-game deaths as a safelane core",
-"low warding around objectives as position 5") and clearly derived from
-the stats. Do not include minor nitpicks; focus on what will matter most.
-
-## 10-Game Action Plan
-A bullet list of concrete things to focus on in the next 10 games.
-Requirements:
-- The action plan must contain between 4 and 6 bullets (no fewer than 4, no more than 6).
-- Each bullet must tie back to one of the main improvement areas OR a clearly visible pattern
-  in the JSON (such as deaths, winrate trends, hero pool consistency, GPM/XPM, hero damage,
-  objective stats, lane outcomes, etc.—only use what actually appears in the JSON).
-- Be specific and as measurable as possible *using only what the JSON supports*.
-  If the JSON includes numbers, you may reference similar magnitudes.
-  If it does not, keep suggestions qualitative (e.g. "look to convert early leads into tower pressure").
-- Focus on realistic adjustments for their likely bracket (no pro-level expectations).
-- Avoid generic replay-review advice unless it is clearly linked to a recurring problem
-  visible in the JSON (for example: frequent high deaths or repeated losses on certain heroes).
+## Key Insights
+A bullet list of 4–7 items. Each item:
+- Is 1–2 sentences.
+- Is clearly grounded in patterns from the JSON.
+- Can be either a positive or negative observation, but should focus on the most impactful
+  tendencies (e.g., very high deaths for a core, inconsistent performance across heroes,
+  strong impact on a small hero pool, low objective contribution for a farming role, etc.).
+Avoid vague filler insights. Each bullet should say something concrete and useful.
 
 Here is the player's structured analysis JSON:
 
