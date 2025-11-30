@@ -75,25 +75,9 @@ export function RecentMatchesCard({ recentMatches, heroesById }: Props) {
               // ---- Hero icon URL resolution ----
               let iconUrl: string | null = null;
 
-              if (hero) {
-                const iconPath = hero.icon || hero.img;
-
-                if (iconPath) {
-                  iconUrl = iconPath.startsWith("http")
-                    ? iconPath
-                    : `https://api.opendota.com${iconPath}`;
-                }
-
-                if (!iconUrl && hero.iconUrl) {
-                  iconUrl = hero.iconUrl;
-                }
-
-                if (!iconUrl && hero.name) {
-                  const shortName = hero.name.replace("npc_dota_hero_", "");
-                  if (shortName) {
-                    iconUrl = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${shortName}.png`;
-                  }
-                }
+              if (hero?.name) {
+                const shortName = hero.name.replace("npc_dota_hero_", "");
+                iconUrl = `https://cdn.cloudflare.steamstatic.com/apps/dota2/images/dota_react/heroes/${shortName}.png`;
               }
 
               const laneRole = m.lane_role ?? null;
