@@ -10,6 +10,7 @@ import { AICoachCard } from "@/components/dashboard/ai-coach-card";
 import { RecentMatchesCard } from "@/components/dashboard/recent-matches-card";
 import { Analysis, ApiResponse, PlayerProfile } from "@/lib/types";
 import { useHeroes } from "@/lib/hooks/useHeroes";
+import { getHeroPoolTop3 } from "@/lib/heroPool";
 
 type RawProfile =
   | PlayerProfile
@@ -19,11 +20,8 @@ type RawProfile =
 
 function normalizeProfile(raw: RawProfile): PlayerProfile | null {
   if (!raw) return null;
-
-  if (typeof raw === "object" && "profile" in raw && raw.profile) {
-    return raw.profile as PlayerProfile;
-  }
-
+  // Our /api/player route already returns the full PlayerProfile,
+  // so we don't want to unwrap raw.profile and lose rank/MMR.
   return raw as PlayerProfile;
 }
 
@@ -40,6 +38,7 @@ export default function PlayerPage() {
 
   const [playerId, setPlayerId] = useState(routeId ?? "");
   const [data, setData] = useState<ApiResponse | null>(null);
+  const heroPoolTop3 = getHeroPoolTop3(data?.recentMatches);
   const [loading, setLoading] = useState(false);
 
   const [coach, setCoach] = useState<string | null>(null);
@@ -156,7 +155,11 @@ export default function PlayerPage() {
               profile={data?.profile ?? null}
               analysis={analysis ?? null}
             />
-            <PerformanceOverviewCard analysis={analysis ?? null} />
+            <PerformanceOverviewCard
+              analysis={analysis ?? null}
+              heroPoolTop3={heroPoolTop3}
+              heroesById={heroesById} // 👈 same map you pass to RecentMatchesCard
+            />
           </div>
 
           <AICoachCard

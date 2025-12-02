@@ -3,12 +3,25 @@
 /* ========== PLAYER ========== */
 
 export type PlayerProfile = {
-  account_id?: number;
-  personaname?: string;
-  name?: string | null;
-  avatarfull?: string;
-  profileurl?: string;
-  // add more OpenDota/Steam fields here as you start using them
+  rank_tier?: number | null;
+  leaderboard_rank?: number | null;
+  computed_mmr?: number | null;
+
+  profile?: {
+    account_id?: number;
+    personaname?: string;
+    name?: string | null;
+    plus?: boolean;
+    steamid?: string;
+    avatar?: string;
+    avatarmedium?: string;
+    avatarfull?: string;
+    profileurl?: string;
+    last_login?: string | null;
+    loccountrycode?: string | null;
+    is_contributor?: boolean;
+    is_subscriber?: boolean;
+  };
 };
 
 /* ========== ANALYSIS ========== */

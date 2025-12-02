@@ -7,25 +7,21 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-type NestedPlayerProfile = { profile: PlayerProfile | null };
-
-function isNestedPlayerProfile(value: unknown): value is NestedPlayerProfile {
-  return !!value && typeof value === "object" && "profile" in value;
-}
-
 type CoachRequestBody = {
-  profile?: PlayerProfile | NestedPlayerProfile | null;
+  profile?: PlayerProfile | null;
   analysis?: Analysis | null;
 };
 
-function extractPlayerProfile(
-  profile: CoachRequestBody["profile"]
-): PlayerProfile | null {
-  if (isNestedPlayerProfile(profile)) {
-    return profile.profile ?? null;
-  }
+function getPlayerName(profile?: PlayerProfile | null): string {
+  if (!profile) return "the player";
 
-  return profile ?? null;
+  // Support both:
+  // - nested: { profile: { personaname, name, ... } }
+  // - flat:   { personaname, name, ... } (if you ever flatten again)
+  const anyProfile = profile as any;
+  const steamProfile = anyProfile.profile ?? anyProfile;
+
+  return steamProfile.personaname || steamProfile.name || "the player";
 }
 
 export async function POST(req: Request) {
@@ -47,11 +43,8 @@ export async function POST(req: Request) {
       );
     }
 
-    const playerProfile = extractPlayerProfile(profile);
-    const playerName =
-      playerProfile?.personaname || playerProfile?.name || "the player";
+    const playerName = getPlayerName(profile);
 
-    // Phase 8: compact, role-aware coaching focused on a small set of concrete insights
     const prompt = `
 You are a professional Dota 2 coach.
 
