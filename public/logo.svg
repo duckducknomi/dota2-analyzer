@@ -1,0 +1,24 @@
+<svg width="260" height="40" viewBox="0 0 260 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="dotaGradient" x1="0" y1="0" x2="260" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#A855F7"/>
+      <stop offset="0.5" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="0.5" y="0.5" width="259" height="39" rx="12" fill="#020617"/>
+  <rect x="0.5" y="0.5" width="259" height="39" rx="12" stroke="#1E293B" stroke-opacity="0.8"/>
+
+  <text
+    x="20"
+    y="25"
+    font-family="system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif"
+    font-size="16"
+    font-weight="700"
+    letter-spacing="0.08em"
+    fill="url(#dotaGradient)"
+  >
+    DOTA 2 ANALYZER
+  </text>
+</svg>

@@ -110,13 +110,13 @@ export default function LandingPage() {
             <div className="flex justify-center lg:justify-end">
               <div className="w-full max-w-md rounded-2xl bg-[color:var(--analyzer-card)] p-3 shadow-sm">
                 <div className="overflow-hidden rounded-xl bg-black/40">
-                  {/* Replace src with your actual dashboard preview screenshot in /public */}
                   <Image
-                    src="/landing-dashboard-preview.png"
+                    src="/landingpage.png"
                     alt="Example analysis dashboard"
                     width={640}
                     height={360}
                     className="h-auto w-full object-cover"
+                    priority
                   />
                 </div>
                 <p className="mt-2 text-center text-[11px] font-medium uppercase tracking-wide text-slate-400">

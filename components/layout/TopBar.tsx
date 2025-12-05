@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -17,12 +18,16 @@ export function TopBar({
   return (
     <header className="border-b border-white/5 bg-[color:var(--analyzer-nav)]/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-        {/* Logo + title */}
-        <div className="flex items-center gap-2">
-          <div className="h-6 w-6 rounded-md bg-[color:var(--analyzer-accent)]" />
-          <span className="text-sm font-semibold tracking-tight">
-            Dota 2 Analyzer
-          </span>
+        {/* Logo */}
+        <div className="flex items-center">
+          <Image
+            src="/logo.svg"
+            alt="Dota 2 Analyzer logo"
+            width={180}
+            height={40}
+            className="h-10 w-auto object-contain"
+            priority
+          />
         </div>
 
         {/* Search bar */}
